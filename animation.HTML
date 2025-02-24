@@ -61,9 +61,7 @@
         <!-- Fancy "Done" button -->
         <button id="doneButton">Done</button>
     </div>
-    <img id="gif" src="stickFigWalking.gif" style="display:none;" />
     <script src="raycasting.js"></script>
-    <script src="libgif.js"></script>
     <script>
         
         const canvas = document.createElement("canvas");
@@ -99,18 +97,8 @@
         ];
         //let gap_chosen = Math.floor(Math.random() * gapOptions.length)
         let gap_chosen = 0;
-        let gap_name;
-        switch (gap_chosen) {
-            case 0:
-                gap_name = "left";
-                break;
-            case 1:
-                gap_name = "right";
-                break;
-            case 2:
-                gap_name = "both";
-                break;
-        }
+        let gap_name = "left";
+        
         console.log("Gap placement: " + gap_name);
         let gapX = gapOptions[gap_chosen];
 
@@ -120,20 +108,9 @@
             { x: rectX + rectWidth - 50 - spriteSize, y: rectY + rectHeight - spriteSize - 40, direction: 0 } // Right
         ];
         
-        let start_chosen = Math.floor(Math.floor(Math.random() * startOptions.length))
-        let start_name;
-        switch (start_chosen) {
-            case 0:
-                start_name = "left";
-                break;
-            case 1:
-                start_name = "middle";
-                break;
-            case 2:
-                start_name = "right";
-                break;
-        }
-        console.log("Start placement: " + start_name);
+        let start_chosen = 2;
+        let start_name = "right";
+        
         let showL = Math.random() > 0.5;
         const pathOptions = ["toBottomLeft", "throughGapStop", "throughGapReturn", "toTopRight"];
         let pathChoice = pathOptions[Math.floor(Math.random() * pathOptions.length)];
@@ -261,20 +238,7 @@
                 ctx.fillStyle = "black";
                 ctx.fillText("L", rectX + rectWidth - 50, rectY + 50);
             }
-            /*
-            // Draw top-center box with "M"
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(rectX + rectWidth / 2 - 25, rectY - 75, 50, 50);
-            ctx.fillStyle = "black";
-            ctx.fillText("M", rectX + rectWidth / 2 - 10, rectY - 35);
-            */
-            // Draw sprite
-            /*
-            ctx.fillStyle = "blue";sp
-            ctx.fillRect(sprite.x, sprite.y, spriteSize, spriteSize);
-            */
-
-            // Draw field of view triangle
+            
             //drawBoundaries();
             drawRays();
 
@@ -511,10 +475,6 @@
         });
 
 
-        document.getElementById("K").addEventListener("click", () => handleUserChoice("K"));
-        document.getElementById("L").addEventListener("click", () => handleUserChoice("L"));
-        document.getElementById("M").addEventListener("click", () => handleUserChoice("M"));
-
         document.getElementById("doneButton").addEventListener("click", handleDone);
 
         function handleUserChoice(choice) {
@@ -566,45 +526,8 @@
             hideSliders(); // Hide sliders when animation restarts
 
 
-            // Reset gap location
-            gap_chosen = Math.floor(Math.random() * gapOptions.length);
-
-            //Reset L spawning
-            showL = Math.random() > 0.5;
-            gap_chosen = 0;
-            switch (gap_chosen) {
-                case 0:
-                    gap_name = "left";
-                    break;
-                case 1:
-                    gap_name = "right";
-                    break;
-                case 2:
-                    gap_name = "both";
-                    break;
-            }
-            console.log("Gap placement: " + gap_name);
-            gapX = gapOptions[gap_chosen];
-
             boundaries = createBoundaries(gap_name)
-            // Reset start location
-            start_chosen = Math.floor(Math.random() * startOptions.length);
-            switch (start_chosen) {
-                case 0:
-                    start_name = "left";
-                    break;
-                case 1:
-                    start_name = "middle";
-                    break;
-                case 2:
-                    start_name = "right";
-                    break;
-            }
-            console.log("Start placement: " + start_name);
-            // Reset path choice
-            pathChoice = pathOptions[Math.floor(Math.random() * pathOptions.length)];
-            console.log("Path choice: " + pathChoice);
-
+           
             
             //Hardcode for each of the 7 conditions here, no randomness
             trial_num += 1;
