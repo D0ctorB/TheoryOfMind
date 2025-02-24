@@ -1,0 +1,186 @@
+body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
+canvas { background: white; }
+#buttonContainer { display: none; text-align: center; margin-top: 50px; }
+
+#sliderContainer {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 20px;
+}
+.slider-wrapper {
+    text-align: center;
+}
+
+#question {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+button#K, button#L, button#M { 
+    font-size: 24px; 
+    padding: 15px 30px; 
+    margin: 10px; 
+    border: none;
+    color: white !important; /* Force white text */
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+/* Individual button colors */
+button#K { background-color: red !important; }
+button#L { background-color: green !important; }
+button#M { background-color: blue !important; }
+
+/* Hover effects */
+button#K:hover { background-color: darkred !important; }
+button#L:hover { background-color: darkgreen !important; }
+button#M:hover { background-color: darkblue !important; }
+.slider-group {
+    margin-top: 20px;
+    position: relative; /* For positioning the vertical line */
+}
+
+.slider-group p {
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center; /* Center the header text */
+}
+
+.slider-wrapper {
+    display: inline-block; /* Ensure sliders are in a row */
+    width: 30%; /* Adjust width to fit three sliders in a row */
+    margin-right: 2%; /* Add spacing between sliders */
+    text-align: center;
+}
+
+.slider-wrapper input[type="range"] {
+    width: 100%; /* Ensure the slider takes up the full width of its container */
+}
+
+/* Vertical line between Desire and Belief sliders */
+.vertical-line {
+    display: inline-block;
+    width: 5px; /* Make the line thicker */
+    background-color: black; /* Color of the vertical line */
+    height: 100%; /* Match the height of the slider groups */
+    margin: 0 20px; /* Add spacing around the line */
+}
+
+#doneButton {
+    display: block; /* Ensure the button is on its own line */
+    margin: 20px auto; /* Center the button horizontally */
+    padding: 15px 30px; /* Increase padding for a larger button */
+    font-size: 18px; /* Increase font size */
+    font-weight: bold; /* Make the text bold */
+    color: white; /* Text color */
+    background-color: #4CAF50; /* Green background color */
+    border: none; /* Remove default border */
+    border-radius: 10px; /* Rounded corners */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+}
+
+#doneButton:hover {
+    background-color: #45a049; /* Darker green on hover */
+    transform: scale(1.05); /* Slightly enlarge the button on hover */
+}
+
+#doneButton:active {
+    background-color: #3e8e41; /* Even darker green when clicked */
+    transform: scale(0.95); /* Slightly shrink the button when clicked */
+}
+
+
+/* Style for the slider track */
+input[type="range"] {
+    -webkit-appearance: none; /* Remove default styling */
+    width: 100%; /* Full width */
+    height: 8px; /* Height of the track */
+    background: #ddd; /* Default track color */
+    border-radius: 5px; /* Rounded corners */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Slightly transparent */
+    transition: opacity 0.2s ease; /* Smooth transition */
+}
+
+/* Style for the slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Remove default styling */
+    appearance: none;
+    width: 20px; /* Size of the thumb */
+    height: 20px;
+    background: #4CAF50; /* Green color */
+    border-radius: 50%; /* Circular thumb */
+    cursor: pointer; /* Pointer cursor */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add shadow */
+    transition: background 0.2s ease, transform 0.2s ease; /* Smooth transitions */
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #4CAF50;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+input[type="range"]::-ms-thumb {
+    width: 20px;
+    height: 20px;
+    background: #4CAF50;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+/* Hover effects for the slider */
+input[type="range"]:hover {
+    opacity: 1; /* Fully opaque on hover */
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #45a049; /* Darker green on hover */
+    transform: scale(1.1); /* Slightly enlarge the thumb */
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    background: #45a049;
+    transform: scale(1.1);
+}
+
+input[type="range"]::-ms-thumb:hover {
+    background: #45a049;
+    transform: scale(1.1);
+}
+
+/* Active state for the slider */
+input[type="range"]:active::-webkit-slider-thumb {
+    background: #3e8e41; /* Even darker green when active */
+    transform: scale(0.9); /* Slightly shrink the thumb */
+}
+
+input[type="range"]:active::-moz-range-thumb {
+    background: #3e8e41;
+    transform: scale(0.9);
+}
+
+input[type="range"]:active::-ms-thumb {
+    background: #3e8e41;
+    transform: scale(0.9);
+}
+
+/* Style for the "Desire" and "Belief" labels */
+.slider-group > p {
+    font-size: 24px; /* Larger font size */
+    font-family: 'Arial', sans-serif; /* Use a modern font */
+    font-weight: bold; /* Bold text */
+    color: black; /* Black color */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
+    margin-bottom: 15px; /* Add spacing below the label */
+    text-transform: uppercase; /* Uppercase text */
+    letter-spacing: 1px; /* Add spacing between letters */
+}

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="buttonContainer" style="display: none;">
+        <p id="question">Which food truck was their favorite?</p>
+        <button id="K">K</button>
+        <button id="L">L</button>
+        <button id="M">M</button>
+    </div>
+
+    <div id="sliderContainer" style="display: none;">
+        <!-- New sliders for Desire -->
+        <div class="slider-group">
+            <p>Desire</p>
+            <div class="slider-wrapper">
+                <p>K</p>
+                <input type="range" id="desireK" min="1" max="7" value="4">
+                <p>Value: <span id="desireKValue">4</span></p>
+            </div>
+            <div class="slider-wrapper">
+                <p>L</p>
+                <input type="range" id="desireL" min="1" max="7" value="4">
+                <p>Value: <span id="desireLValue">4</span></p>
+            </div>
+            <div class="slider-wrapper">
+                <p>M</p>
+                <input type="range" id="desireM" min="1" max="7" value="4">
+                <p>Value: <span id="desireMValue">4</span></p>
+            </div>
+        </div>
+    
+        <!-- Vertical line -->
+        <div class="vertical-line"></div>
+    
+        <!-- New sliders for Belief -->
+        <div class="slider-group">
+            <p>Belief</p>
+            <div class="slider-wrapper">
+                <p>K</p>
+                <input type="range" id="beliefK" min="1" max="7" value="4">
+                <p>Value: <span id="beliefKValue">4</span></p>
+            </div>
+            <div class="slider-wrapper">
+                <p>L</p>
+                <input type="range" id="beliefL" min="1" max="7" value="4">
+                <p>Value: <span id="beliefLValue">4</span></p>
+            </div>
+            <div class="slider-wrapper">
+                <p>M</p>
+                <input type="range" id="beliefM" min="1" max="7" value="4">
+                <p>Value: <span id="beliefMValue">4</span></p>
+            </div>
+        </div>
+    
+        <!-- Fancy "Done" button -->
+        <button id="doneButton">Done</button>
+    </div>
+    <img id="gif" src="stickFigWalking.gif" style="display:none;" />
+    <script src="raycasting.js"></script>
+    <script src="libgif.js"></script>
+    <script>
+        
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const image = new Image()
+        image.src = 'CartoonFace.png';
+        document.body.appendChild(canvas);
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        const rectX = (canvas.width - 500) / 2;
+        const rectY = (canvas.height - 300) / 2;
+        const rectWidth = 500;
+        const rectHeight = 300;
+        const lineWidth = 30;
+        const gapWidth = 50;
+        const spriteSize = 45;
+
+        let trial_num = 0;
+        //start is always right, gap always left
+        //store L-spawning, path
+
+        const situations = [[true, "toBottomLeft"], [true, "throughGapStop"],
+                            [true, "throughGapReturn"], [true, "toTopRight"],
+                            [false, "toBottomLeft"], [false, "throughGapStop"],
+                            [false, "throughGapReturn"]];
+
+        const gapOptions = [
+            [rectX + gapWidth], // Left
+            [rectX + rectWidth - gapWidth], // Right
+            [rectX + gapWidth, rectX + rectWidth - gapWidth] // Both
+        ];
+        //let gap_chosen = Math.floor(Math.random() * gapOptions.length)
+        let gap_chosen = 0;
+        let gap_name;
+        switch (gap_chosen) {
+            case 0:
+                gap_name = "left";
+                break;
+            case 1:
+                gap_name = "right";
+                break;
+            case 2:
+                gap_name = "both";
+                break;
+        }
+        console.log("Gap placement: " + gap_name);
+        let gapX = gapOptions[gap_chosen];
+
+        const startOptions = [
+            { x: rectX + 100, y: rectY + rectHeight - spriteSize - 40, direction: 0}, // Left
+            { x: rectX + rectWidth / 2, y: rectY + rectHeight - spriteSize - 40, direction: 0 }, // Middle
+            { x: rectX + rectWidth - 50 - spriteSize, y: rectY + rectHeight - spriteSize - 40, direction: 0 } // Right
+        ];
+        
+        let start_chosen = Math.floor(Math.floor(Math.random() * startOptions.length))
+        let start_name;
+        switch (start_chosen) {
+            case 0:
+                start_name = "left";
+                break;
+            case 1:
+                start_name = "middle";
+                break;
+            case 2:
+                start_name = "right";
+                break;
+        }
+        console.log("Start placement: " + start_name);
+        let showL = Math.random() > 0.5;
+        const pathOptions = ["toBottomLeft", "throughGapStop", "throughGapReturn", "toTopRight"];
+        let pathChoice = pathOptions[Math.floor(Math.random() * pathOptions.length)];
+        
+        //Hardcode for each of the 7 conditions here, no randomness
+        let condition = situations[trial_num];
+        start_chosen = 2;
+        gap_chosen = 0;
+        showL = condition[0];
+        pathChoice = condition[1];
+
+        let sprite = { ...startOptions[start_chosen], speed: 1, movingUp: false, returningDown: false };
+
+        
+        
+        let userChoices = []; // Store user choices
+        let animationCount = 0; // Track number of animations
+        let sliderValues = [];
+
+        let isPaused = false; // Track if the animation is paused
+
+        let boundaries = createBoundaries(gap_name)
+
+        // Define the boundaries of the rectangle, the horizontal bar, and the yellow rectangles
+        
+        function createBoundaries(gap_name) {
+            const boundaries = [
+            { x1: rectX, y1: rectY + 15, x2: rectX + rectWidth, y2: rectY + 15 }, // Top boundary
+            { x1: rectX, y1: rectY + rectHeight - 15, x2: rectX + rectWidth, y2: rectY + rectHeight - 15}, // Bottom boundary
+            { x1: rectX + 15, y1: rectY, x2: rectX + 15, y2: rectY + rectHeight }, // Left boundary
+            { x1: rectX + rectWidth - 15, y1: rectY, x2: rectX + rectWidth - 15, y2: rectY + rectHeight }, // Right boundary
+            
+            { x1: rectX + 15, y1: rectY - 5 + rectHeight - 60, x2: rectX + 65, y2: rectY - 5 + rectHeight - 60 }, // K box top side
+
+            { x1: rectX + 65, y1: rectY - 5 + rectHeight - 60, x2: rectX + 65, y2: rectY - 5 + rectHeight - 10 }, // K box right side
+
+            { x1: rectX - 5 + rectWidth - 60, y1: rectY + 15, x2: rectX - 5 + rectWidth - 60, y2: rectY + 65 }, // L box left side
+
+            { x1: rectX - 5 + rectWidth - 60, y1: rectY + 65, x2: rectX - 5 + rectWidth - 10, y2: rectY + 65 }, // L box bottom side
+            ];
+
+            //add bar boundaries for gap on left
+            if (gap_name === "left") {
+                boundaries.push({ x1: rectX + 90, y1: rectY + rectHeight / 2 + 25, x2: rectX + rectWidth, y2: rectY + rectHeight / 2 + 25}) // Bottom Horizontal bar
+                boundaries.push({ x1: rectX + 90, y1: rectY + rectHeight / 2 - 25, x2: rectX + rectWidth, y2: rectY + rectHeight / 2 - 25}) // Top Horizontal bar
+                boundaries.push({ x1: rectX + 90, y1: rectY + rectHeight / 2 - 25, x2: rectX + 90 , y2: rectY + rectHeight / 2 + 25}) // left Horizontal bar) // Left Horizontal bar
+            }
+
+            if (gap_name === "right") {
+                boundaries.push({ x1:  rectX + 15, y1: rectY + rectHeight / 2 + 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 + 25}) // Bottom Horizontal bar
+                boundaries.push({ x1:  rectX + 15, y1: rectY + rectHeight / 2 - 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 - 25}) // Top Horizontal bar
+                boundaries.push({ x1:  rectX + rectWidth - 90, y1: rectY + rectHeight / 2 - 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 + 25}) // Left Horizontal bar
+            }
+
+            if (gap_name === "both") {
+                boundaries.push({ x1:  rectX + 90, y1: rectY + rectHeight / 2 + 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 + 25}) // Bottom Horizontal bar
+                boundaries.push({ x1:  rectX + 90, y1: rectY + rectHeight / 2 - 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 - 25}) // Top Horizontal bar
+                boundaries.push({ x1:  rectX + rectWidth - 90, y1: rectY + rectHeight / 2 - 25, x2:  rectX + rectWidth - 90, y2: rectY + rectHeight / 2 + 25}) // Left Horizontal bar
+                boundaries.push({ x1: rectX + 90, y1: rectY + rectHeight / 2 - 25, x2: rectX + 90 , y2: rectY + rectHeight / 2 + 25}) // left Horizontal bar) // Left Horizontal bar
+            }
+            return boundaries
+
+        }
+
+        function saveResultsToFile() {
+            // Convert userChoices array to a string
+            const data = userChoices.join("\n"); // Each choice on a new line
+
+            // Create a Blob with the data
+            const blob = new Blob([data], { type: "text/plain" });
+
+            // Create a link element
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "results.txt"; // File name
+
+            // Trigger the download
+            link.click();
+
+            // Clean up
+            URL.revokeObjectURL(link.href);
+        }
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            //grey background
+            ctx.fillStyle = "grey";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw rectangle outline
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+            
+            // Draw horizontal line with gap(s)
+            const midY = rectY + rectHeight / 2;
+            const effectiveGapWidth = gapWidth + lineWidth; // Extend gap to fully match stroke
+
+            ctx.beginPath();
+            ctx.moveTo(rectX, midY);
+
+            gapX.forEach(gap => {
+                ctx.lineTo(gap - effectiveGapWidth / 2, midY);
+                ctx.moveTo(gap + effectiveGapWidth / 2, midY);
+            });
+            ctx.lineTo(rectX + rectWidth, midY);
+            ctx.lineWidth = 50;
+            ctx.lineCap = "butt";
+            ctx.stroke();
+
+            
+            
+
+            // Draw bottom-left box with "K"
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(rectX + 15, rectY -5 + rectHeight - 60, 50, 50);
+            ctx.fillStyle = "black";
+            ctx.font = "30px Arial";
+            ctx.fillText("K", rectX + 30, rectY + rectHeight - 30);
+
+            // Draw top-right box with "L" or empty
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(rectX - 5 + rectWidth - 60, rectY + 15, 50, 50);
+            if (showL) {
+                ctx.fillStyle = "black";
+                ctx.fillText("L", rectX + rectWidth - 50, rectY + 50);
+            }
+            /*
+            // Draw top-center box with "M"
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(rectX + rectWidth / 2 - 25, rectY - 75, 50, 50);
+            ctx.fillStyle = "black";
+            ctx.fillText("M", rectX + rectWidth / 2 - 10, rectY - 35);
+            */
+            // Draw sprite
+            /*
+            ctx.fillStyle = "blue";sp
+            ctx.fillRect(sprite.x, sprite.y, spriteSize, spriteSize);
+            */
+
+            // Draw field of view triangle
+            //drawBoundaries();
+            drawRays();
+
+            
+            // Draw the animated GIF (sprite)
+            ctx.drawImage(image, sprite.x, sprite.y, spriteSize, spriteSize);
+        }
+
+
+        function update() {
+           console.log(pathChoice);
+
+            switch (pathChoice) {
+                case "toBottomLeft":
+                    moveToBottomLeft();
+                    break;
+                case "throughGapStop":
+                    moveThroughGapStop();
+                    break;
+                case "throughGapReturn":
+                    moveThroughGapReturn();
+                    break;
+                case "toTopRight":
+                    moveToTopRight();
+                    break;
+                default:
+                    console.error("Invalid path choice:", pathChoice);
+                    break;
+            }
+            sprite.speed = 1;
+        }
+
+        function moveToBottomLeft() {
+            if (sprite.x > rectX + 65) {
+                sprite.x -= sprite.speed; // Move left
+                sprite.direction = Math.PI; // Face left
+            }
+            else {
+                isPaused = true;
+            }
+        }
+
+        function moveThroughGapStop() {
+            if (!sprite.movingUp) {
+                // Move horizontally towards the gap
+                if (gap_name === "left" || gap_name === "both") {
+                    if (sprite.x > rectX + 58) {
+                        sprite.x -= sprite.speed; // Move left
+                        sprite.direction = Math.PI; // Face left
+
+                    } else {
+                        sprite.movingUp = true; // Start moving up
+                    }
+                } else if (gap_name === "right") {
+                    if (sprite.x < rectX + rectWidth - 40 - spriteSize) {
+                        sprite.x += sprite.speed; // Move right
+                        sprite.direction = 0; // Face right
+
+                    } else {
+                        sprite.movingUp = true; // Start moving up
+                    }
+                }
+            } else {
+                // Move upward through the gap
+                if (sprite.y > rectY + rectHeight / 2 - spriteSize - 50) {
+                    sprite.y -= sprite.speed; // Move up
+                    sprite.direction = -Math.PI / 2; // Face up
+
+                } else {
+                    if (gap_name === "left" || gap_name === "both") {
+                        sprite.direction = 0; // Face right
+                        sprite.direction = Math.PI / 2; // Face down
+                    }
+                    sprite.speed = 0; // Stop at the top
+                    isPaused = true; // Pause the animation
+                }
+            }
+        }
+
+        let paused = false; // Track if the sprite is paused
+        let pauseStartTime = 0; // Track when the pause started
+
+        function moveThroughGapReturn() {
+            if (!sprite.movingUp && !sprite.returningDown && !paused) {
+                // Move horizontally towards the gap
+                if (gap_name === "left" || gap_name === "both") {
+                    if (sprite.x > rectX + 58) {
+                        sprite.x -= sprite.speed; // Move left
+                        sprite.direction = Math.PI; // Face left
+
+                    } else {
+                        sprite.movingUp = true; // Start moving up
+                    }
+                } else if (gap_name === "right") {
+                    if (sprite.x < rectX + rectWidth - 40 - spriteSize) {
+                        sprite.x += sprite.speed; // Move right
+                        sprite.direction = 0; // Face right
+
+                    } else {
+                        sprite.movingUp = true; // Start moving up
+                    }
+                }
+            } else if (sprite.movingUp && !paused) {
+                // Move upward through the gap
+                if (sprite.y > rectY + rectHeight / 2 - spriteSize - 50) {
+                    sprite.y -= sprite.speed; // Move up
+                    sprite.direction = -Math.PI / 2; // Face up
+
+                } else {
+                    sprite.movingUp = false; // Stop moving up
+                    if (gap_name === "left" || gap_name === "both") {
+                        sprite.direction = 0; // Face right
+                    }
+                    paused = true; // Start pause
+                    pauseStartTime = Date.now(); // Record pause start time
+                }
+            } else if (paused) {
+                // Pause for 1 second
+                if (Date.now() - pauseStartTime >= 1000) {
+                    paused = false; // End pause
+                    sprite.returningDown = true; // Start moving down
+                }
+            } else if (sprite.returningDown) {
+                // Move downward through the gap
+                if (sprite.y < rectY + rectHeight - spriteSize - 50) {
+                    sprite.y += sprite.speed; // Move down
+                    sprite.direction = Math.PI / 2; // Face down
+
+                } else {
+                    sprite.speed = 0; // Stop at the bottom
+                    if (gap_name === "right") {
+                        sprite.direction = Math.PI; // Face left
+                    }
+                    isPaused = true; // Pause the animation
+                }
+            }
+        }
+
+        function moveToTopRight() {
+            if (gap_name === "left" || gap_name === "both") {
+                // Move left to the gap
+                if (sprite.x > rectX + 57 && (sprite.y > rectY + rectHeight / 2 - spriteSize - 50)) {
+                    sprite.x -= sprite.speed; // Move left
+                    sprite.direction = Math.PI; // Face left
+
+                } else if (sprite.y > rectY + rectHeight / 2 - spriteSize - 50) {
+                    sprite.y -= sprite.speed; // Move up through the gap
+                    sprite.direction = -Math.PI / 2; // Face up
+
+                } else if (sprite.x < rectX + rectWidth - 90) {
+                    sprite.x += sprite.speed; // Move right to the top-right corner
+                    sprite.direction = 0; // Face right
+
+                }
+                else {
+                    isPaused = true; // Pause the animation
+                }
+            } else if (gap_name === "right") {
+                // Move right to the gap
+                if (sprite.x < rectX + rectWidth - 40 - spriteSize) {
+                    sprite.x += sprite.speed; // Move right
+                    sprite.direction = 0; // Face right
+
+                } else if (sprite.y > rectY + rectHeight / 2 - spriteSize - 50) {
+                    sprite.y -= sprite.speed; // Move up through the gap
+                    sprite.direction = -Math.PI / 2; // Face up
+
+                }
+                else {
+                    isPaused = true; // Pause the animation
+                }
+            }
+        }
+                
+        function gameLoop() {
+            if (isPaused) {
+                if (trial_num <= 6) {
+                    setTimeout(() => {
+                        showSliders();
+                    }, 2000); // Pause for 15 seconds
+                    return;
+                }
+            } else {
+                update();
+                drawScene();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        /*
+        function showButtons() {
+            const buttonContainer = document.getElementById("buttonContainer");
+            if (buttonContainer) {
+                buttonContainer.style.display = "block";
+            }
+        }
+        */
+        function showSliders() {
+            const sliderContainer = document.getElementById("sliderContainer");
+            const buttonContainer = document.getElementById("buttonContainer");
+            if (sliderContainer && buttonContainer) {
+                buttonContainer.style.display = "none";
+                sliderContainer.style.display = "flex"; // Show sliders horizontally
+            }
+        }
+
+        
+        function hideSliders() {
+            const sliderContainer = document.getElementById("sliderContainer");
+            if (sliderContainer) {
+                sliderContainer.style.display = "none"; // Hide sliders
+            }
+        }
+
+        // Add event listeners for Desire sliders
+        document.getElementById("desireK").addEventListener("input", (e) => {
+            document.getElementById("desireKValue").textContent = e.target.value;
+        });
+        document.getElementById("desireL").addEventListener("input", (e) => {
+            document.getElementById("desireLValue").textContent = e.target.value;
+        });
+        document.getElementById("desireM").addEventListener("input", (e) => {
+            document.getElementById("desireMValue").textContent = e.target.value;
+        });
+
+        // Add event listeners for Belief sliders
+        document.getElementById("beliefK").addEventListener("input", (e) => {
+            document.getElementById("beliefKValue").textContent = e.target.value;
+        });
+        document.getElementById("beliefL").addEventListener("input", (e) => {
+            document.getElementById("beliefLValue").textContent = e.target.value;
+        });
+        document.getElementById("beliefM").addEventListener("input", (e) => {
+            document.getElementById("beliefMValue").textContent = e.target.value;
+        });
+
+
+        document.getElementById("K").addEventListener("click", () => handleUserChoice("K"));
+        document.getElementById("L").addEventListener("click", () => handleUserChoice("L"));
+        document.getElementById("M").addEventListener("click", () => handleUserChoice("M"));
+
+        document.getElementById("doneButton").addEventListener("click", handleDone);
+
+        function handleUserChoice(choice) {
+            userChoices.push(choice);
+            console.log(userChoices);
+            animationCount++;
+
+            if (trial_num < 6) {
+                resetAnimation();
+            } else {
+                alert("Experiment complete! Choices: " + userChoices.join(", "));
+            }
+        }
+
+        function handleDone() {
+            // Collect values from the Desire sliders
+            const desireK = document.getElementById("desireK").value;
+            const desireL = document.getElementById("desireL").value;
+            const desireM = document.getElementById("desireM").value;
+            const desireValues = { desireK, desireL, desireM };
+
+            // Collect values from the Belief sliders
+            const beliefK = document.getElementById("beliefK").value;
+            const beliefL = document.getElementById("beliefL").value;
+            const beliefM = document.getElementById("beliefM").value;
+            const beliefValues = { beliefK, beliefL, beliefM };
+
+            // Store all values
+            sliderValues.push({ desireValues, beliefValues });
+
+
+            hideSliders(); // Hide sliders when "Done" is clicked
+
+            if (trial_num < 6) {
+                resetAnimation();
+            } else {
+                alert("Experiment complete! Slider values: " + JSON.stringify(sliderValues));
+                saveResultsToFile(); // Save userChoices to a file
+            }
+        }
+        function resetAnimation() {
+            if (trial_num > 5) {
+                // Experiment is complete
+                alert("Experiment complete! Choices: " + userChoices.join(", ") + "\nSlider values: " + JSON.stringify(sliderValues));
+                return; // Stop further execution
+            }
+            canvas.style.display = "block"; // Show canvas
+            buttonContainer.style.display = "none";
+            hideSliders(); // Hide sliders when animation restarts
+
+
+            // Reset gap location
+            gap_chosen = Math.floor(Math.random() * gapOptions.length);
+
+            //Reset L spawning
+            showL = Math.random() > 0.5;
+            gap_chosen = 0;
+            switch (gap_chosen) {
+                case 0:
+                    gap_name = "left";
+                    break;
+                case 1:
+                    gap_name = "right";
+                    break;
+                case 2:
+                    gap_name = "both";
+                    break;
+            }
+            console.log("Gap placement: " + gap_name);
+            gapX = gapOptions[gap_chosen];
+
+            boundaries = createBoundaries(gap_name)
+            // Reset start location
+            start_chosen = Math.floor(Math.random() * startOptions.length);
+            switch (start_chosen) {
+                case 0:
+                    start_name = "left";
+                    break;
+                case 1:
+                    start_name = "middle";
+                    break;
+                case 2:
+                    start_name = "right";
+                    break;
+            }
+            console.log("Start placement: " + start_name);
+            // Reset path choice
+            pathChoice = pathOptions[Math.floor(Math.random() * pathOptions.length)];
+            console.log("Path choice: " + pathChoice);
+
+            
+            //Hardcode for each of the 7 conditions here, no randomness
+            trial_num += 1;
+            let condition = situations[trial_num];
+            start_chosen = 2;
+            gap_chosen = 0;
+            showL = condition[0];
+            pathChoice = condition[1];
+            // Reset sprite
+            Object.assign(sprite, startOptions[start_chosen]);
+            sprite.speed = 1;
+            sprite.movingUp = false;
+            sprite.returningDown = false;
+
+            
+            // Reset pause state
+            isPaused = false;
+
+            // Restart animation
+            gameLoop();
+        }
+
+        gameLoop(); // Start the game loop
+        
+        
+        </script>
+</body>
+</html>
