@@ -122,7 +122,7 @@
         showL = condition[0];
         pathChoice = condition[1];
 
-        let sprite = { ...startOptions[start_chosen], speed: 1, movingUp: false, returningDown: false };
+        let sprite = { ...startOptions[start_chosen], speed: 10, movingUp: false, returningDown: false };
 
         
         
@@ -179,19 +179,21 @@
             // Convert userChoices array to a string
             const data = userChoices.join("\n"); // Each choice on a new line
 
-            // Create a Blob with the data
-            const blob = new Blob([data], { type: "text/plain" });
-
-            // Create a link element
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "results.txt"; // File name
-
-            // Trigger the download
-            link.click();
-
-            // Clean up
-            URL.revokeObjectURL(link.href);
+            // Send the data to the Node.js server
+            fetch("http://localhost:3001/save-results", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ data }), // Send the data as JSON
+            })
+                .then((response) => response.text())
+                .then((message) => {
+                    console.log(message); // Log the server's response
+                })
+                .catch((error) => {
+                    console.error("Error saving results:", error);
+                });
         }
 
         function drawScene() {
@@ -388,7 +390,7 @@
                     sprite.y -= sprite.speed; // Move up through the gap
                     sprite.direction = -Math.PI / 2; // Face up
 
-                } else if (sprite.x < rectX + rectWidth - 90) {
+                } else if (sprite.x < rectX + rectWidth - 100) {
                     sprite.x += sprite.speed; // Move right to the top-right corner
                     sprite.direction = 0; // Face right
 
